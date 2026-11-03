@@ -10,6 +10,7 @@ Bentuknya PWA (Progressive Web App): bisa dipasang di layar HP dan dipakai offli
 | `index.html` | Tampilan dan gaya (CSS) aplikasi |
 | `data.js` | **Semua data program**: gerakan, set, repetisi, target, jadwal. Ubah angka latihan di sini |
 | `app.js` | Logika aplikasi: navigasi, sesi latihan, timer, pemandu Kegel, progres |
+| `anim.js` | Animasi figur untuk setiap gerakan (pose kunci yang bisa diubah) |
 | `sw.js` | Service worker agar aplikasi bisa offline |
 | `manifest.webmanifest` | Nama, ikon, dan warna aplikasi saat dipasang di HP |
 | `icons/` | Ikon aplikasi |
@@ -17,8 +18,9 @@ Bentuknya PWA (Progressive Web App): bisa dipasang di layar HP dan dipakai offli
 
 ## Fitur
 
+- Animasi figur untuk setiap gerakan, tampil di detail gerakan dan layar latihan
 - Tes awal untuk menentukan level
-- 4 level, 6 kategori (Push, Pull, Legs, Core, Skill, Pelvic Floor), 52 gerakan
+- 4 level, 6 kategori (Push, Pull, Legs, Core, Skill, Pelvic Floor), 53 gerakan + 18 latihan Pelvic Floor
 - Jadwal mingguan otomatis sesuai level
 - Mode latihan: penghitung repetisi, stopwatch untuk gerakan tahan, timer istirahat otomatis dengan bunyi dan getar
 - Sistem unlock: capai target untuk membuka gerakan berikutnya

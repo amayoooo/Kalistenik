@@ -28,6 +28,7 @@
   --f-display:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:14px; --r-sm:10px;
+  --anim-fig:var(--fg); --anim-far:color-mix(in srgb,var(--muted) 62%,var(--bg)); --anim-prop:var(--muted); --anim-prop-fill:var(--surface-2); --anim-floor:var(--line);
   color-scheme:dark;
 }
 @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
@@ -305,6 +306,14 @@ h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.05;margin:0;
 
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:70;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:13px;font-weight:700;box-shadow:var(--shadow);animation:up .25s;max-width:calc(100% - 32px);text-align:center}
 
+
+/* Animasi gerakan */
+.anim{position:relative;width:100%;aspect-ratio:200/136;max-width:100%;border-radius:var(--r);background:linear-gradient(180deg,var(--surface-2),color-mix(in srgb,var(--surface-2) 40%,var(--surface)));overflow:hidden;margin:4px 0 12px}
+.anim-svg{display:block;width:100%;height:100%}
+.anim::after{content:"Animasi";position:absolute;left:10px;top:8px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.anim-wo{margin:0 auto;max-height:30vh;width:auto;max-width:100%;background:var(--surface)}
+.anim-wo::after{content:none}
+
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -335,6 +344,7 @@ h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.05;margin:0;
 <div id="layer"></div>
 
 <script src="data.js"></script>
+<script src="anim.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

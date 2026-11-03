@@ -1,12 +1,13 @@
 /* Service worker: membuat aplikasi bisa dipakai offline.
    Naikkan angka VERSION setiap kali kamu mengubah file aplikasi,
    supaya HP mengunduh versi terbaru. */
-const VERSION = "kp-v1";
+const VERSION = "kp-v2";
 const FILES = [
   "./",
   "./index.html",
   "./app.js",
   "./data.js",
+  "./anim.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

@@ -53,6 +53,10 @@
   const tgt = (e) => `${e.tSets}×${e.tVal}${unitTxt(e)}${sideTxt(e)}`;
   function weekStart(d) { d = new Date(d); d.setHours(0, 0, 0, 0); const wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); return d; }
 
+  /* ---------------- Animasi gerakan (anim.js) ---------------- */
+  const hasAnim = (id) => !!(window.Anim && window.Anim.has(id));
+  const mountAnim = (box, id) => { try { if (box && window.Anim) window.Anim.mount(box, id); } catch (e) { box && box.remove(); } };
+
   /* ---------------- Status progresi ---------------- */
   function chain(cat, lv) { return EXERCISES.filter(e => e.cat === cat && e.lv === lv); }
   function isDone(e) { return !!S.mastered[e.id]; }
@@ -308,6 +312,7 @@
   function openExercise(e) {
     const s = status(e); const best = S.best[e.id];
     sheet(`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="pill" style="color:${lvColor(e.lv)}">${LV(e.lv).name}</span><span class="pill">${catName(e.cat)}</span>${pill(e)}${e.gate ? '<span class="pill">Syarat naik level</span>' : ""}</div>
+      ${hasAnim(e.id) ? '<div class="anim" id="exanim"></div>' : ""}
       <h2>${e.name}</h2>
       <div class="rxgrid">
         <div class="rxbox"><div class="eyebrow">Latihan</div><div class="v">${rx(e)}</div></div>
@@ -321,6 +326,7 @@
           : `<button class="btn btn-primary btn-block" data-go>${I.play} Latih gerakan ini</button>${s === "open" ? `<button class="btn btn-line btn-block" data-mark>Saya sudah mencapai target</button>` : ""}`}
       </div>`,
       (el) => {
+        mountAnim(el.querySelector("#exanim"), e.id);
         el.querySelector("[data-go]")?.addEventListener("click", () => { closeSheet(); startWorkout([e], e.name); });
         el.querySelector("[data-mark]")?.addEventListener("click", () => { markMastered(e); closeSheet(); rerender(); });
       });
@@ -335,13 +341,14 @@
   function openPelvic(p) {
     const open = p.lv <= S.level; const dur = Math.round(p.steps().reduce((t, s) => t + s.sec, 0) / 60);
     sheet(`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="pill" style="color:${lvColor(p.lv)}">${LV(p.lv).name}</span><span class="pill" style="color:var(--pelvic)">${S.pelvicName}</span></div>
+      ${hasAnim(p.id) ? '<div class="anim" id="exanim"></div>' : ""}
       <h2>${p.name}</h2>
       <div class="rxgrid"><div class="rxbox"><div class="eyebrow">Latihan</div><div class="v" style="font-size:19px">${p.rx}</div></div><div class="rxbox tgt"><div class="eyebrow">Target</div><div class="v" style="font-size:19px">${p.target}</div></div></div>
       <p class="muted" style="margin:0;font-size:13px">Durasi pemandu ±${Math.max(1, dur)} menit</p>
       <h3>Cara melakukan</h3><ol class="steps">${p.how.map(h => `<li>${h}</li>`).join("")}</ol>
       <h3>Prinsip penting</h3><p style="margin:6px 0 0;font-size:14px">Waktu rileks sama atau lebih lama dari waktu kontraksi. Perut, bokong, dan paha tetap rileks. Jangan rutin berlatih sambil menghentikan pipis.</p>
       <div style="margin-top:20px">${open ? `<button class="btn btn-primary btn-block" data-go>${I.play} Mulai pemandu</button>` : `<button class="btn btn-ghost btn-block" disabled style="opacity:.6">Terbuka di level ${LV(p.lv).name}</button>`}</div>`,
-      (el) => el.querySelector("[data-go]")?.addEventListener("click", () => { closeSheet(); startPelvic([p], p.name); }));
+      (el) => { mountAnim(el.querySelector("#exanim"), p.id); el.querySelector("[data-go]")?.addEventListener("click", () => { closeSheet(); startPelvic([p], p.name); }); });
   }
 
   /* =========================================================
@@ -486,6 +493,7 @@
       const running = isHold && W.holdStart;
       body = `<div><div class="eyebrow">Gerakan ${W.i + 1}/${W.items.length} · ${catName(e.cat)}</div><h2>${e.name}</h2>
           <div class="setdots">${dots}</div>
+          ${hasAnim(e.id) ? '<div class="anim anim-wo" id="woanim" style="margin-top:12px"></div>' : ""}
           <p class="muted" style="margin:8px 0 0;font-size:14px">Set ${W.set + 1} dari ${e.sets} · latihan <b style="color:var(--fg)">${e.min === e.max ? e.min : e.min + "–" + e.max}${isHold ? " dtk" : " rep"}${sideTxt(e)}</b> · lulus <b style="color:var(--accent)">${tgt(e)}</b></p></div>
         <div class="big" id="bigval">${isHold ? (running ? 0 : W.value) : W.value}<small>${isHold ? "dtk" : "rep"}</small></div>
         ${isHold ? (running ? `<p class="hint">Tahan... ketuk <b>Stop</b> saat selesai</p>`
@@ -529,6 +537,7 @@
       <div class="wo-foot">${foot}</div>
     </div>${confirmBox}`;
     el.querySelectorAll("[data-a]").forEach(b => b.addEventListener("click", () => woAction(b.dataset.a)));
+    if (W.phase === "work") mountAnim(el.querySelector("#woanim"), curItem().ex.id);
   }
 
   function nextPosition() {
