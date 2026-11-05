@@ -25,6 +25,8 @@ Bentuknya PWA (Progressive Web App): bisa dipasang di layar HP dan dipakai offli
 - Mode latihan: penghitung repetisi, stopwatch untuk gerakan tahan, timer istirahat otomatis dengan bunyi dan getar
 - Sistem unlock: capai target untuk membuka gerakan berikutnya
 - Syarat naik level dan pemberitahuan naik level
+- Panduan otot dasar panggul dengan diagram animasi
+- **Program Kontrol (12 minggu)** untuk kontrol ejakulasi: cek mandiri, latihan terpandu per fase (Kenali, Kekuatan, Kontrol, Integrasi), teknik stop-start, squeeze, dan napas, jurnal mingguan dengan grafik, tanda kapan ke dokter, dan daftar sumber ilmiah
 - Pemandu Kegel dengan aba-aba "Kencangkan / Tahan / Lepas" dan getaran HP
 - Nama menu Pelvic Floor yang bisa disamarkan ("Core Dalam")
 - Progres: streak, grafik sesi per minggu, riwayat

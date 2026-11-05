@@ -7,7 +7,7 @@
 
   /* ---------------- Penyimpanan ---------------- */
   const KEY = "kalistenik-pro-v1";
-  const DEFAULT = { onboarded: false, level: 1, mastered: {}, best: {}, last: {}, logs: [], pelvicName: "Core Dalam", theme: "system", sound: true };
+  const DEFAULT = { onboarded: false, level: 1, mastered: {}, best: {}, last: {}, logs: [], pelvicName: "Core Dalam", theme: "system", sound: true, kontrol: null };
   let S = load();
 
   function load() {
@@ -139,7 +139,7 @@
   /* =========================================================
      ROUTER
      ========================================================= */
-  const ROUTES = { home: renderHome, program: renderProgram, map: renderMap, progress: renderProgress, profile: renderProfile };
+  const ROUTES = { home: renderHome, program: renderProgram, map: renderMap, progress: renderProgress, profile: renderProfile, kontrol: () => renderKontrol() };
   const UI = { programLv: null, mapCat: "push" };
   function route() {
     let r = (location.hash || "#home").slice(1);
@@ -203,6 +203,7 @@
         <span class="ic">${I.pelvic}</span>
         <span class="tx"><b>${S.pelvicName} harian ${pelvicToday ? "· selesai" : ""}</b><span>${pList.length} latihan terpandu · 5–10 menit · bisa di mana saja</span></span>${I.chev}
       </button>
+      ${(() => { const kw = kWeek(); const kp = kw ? kPhase(Math.min(kw, 12)) : null; return `<a class="pcard" href="#kontrol" style="text-decoration:none;color:inherit"><span class="ic" style="background:color-mix(in srgb,var(--accent) 16%,transparent)"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="stroke:var(--accent)"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="tx"><b>Program Kontrol${kw ? (kw > 12 ? " · pemeliharaan" : ` · minggu ${kw}/12`) : ""}</b><span>${kw ? (kw > 12 ? "Pertahankan hasil 3–4× per minggu" : `Fase ${kp.name} · ${kTodayDone() ? "hari ini selesai" : "latihan hari ini belum"}`) : "12 minggu berbasis riset untuk kontrol ejakulasi"}</span></span>${I.chev}</a>`; })()}
       <section>
         <div class="section-h" style="margin-bottom:10px"><h2>Minggu ini</h2><span class="eyebrow">${sessionsThisWeek()} / ${Object.keys(SCHEDULE[S.level]).length} sesi</span></div>
         <div class="week">${strip}</div>
@@ -215,7 +216,10 @@
     </div>`;
 
     view.querySelector('[data-act="start-today"]')?.addEventListener("click", () => startWorkout(ses.items, ses.name));
-    view.querySelectorAll('[data-act="start-pelvic"]').forEach(b => b.addEventListener("click", () => startPelvic(pList, `${S.pelvicName} harian`, true)));
+    view.querySelectorAll('[data-act="start-pelvic"]').forEach(b => b.addEventListener("click", () => {
+      const go = () => startPelvic(pList, `${S.pelvicName} harian`, true);
+      if (!S.logs.some(l => l.type === "pelvic")) muscleGuide(go); else go();
+    }));
     view.querySelector('[data-act="levelup"]')?.addEventListener("click", levelUp);
   }
 
@@ -302,10 +306,12 @@
         <div class="bar" style="margin-top:10px"><i style="width:${total ? done / total * 100 : 0}%"></i></div>
         <p class="note" style="margin:8px 0 0">${cat === "pelvic" ? "Latihan terbuka sesuai level kamu. Lakukan setiap hari, 2–3 sesi pendek." : "Kolom kanan adalah target lulus. Capai target untuk membuka gerakan berikutnya."}</p>
       </section>
+      ${cat === "pelvic" ? `<button class="pcard" data-guide><span class="ic">${I.pelvic}</span><span class="tx"><b>Kenali otot yang dilatih</b><span>Letak otot, cara mengencangkan, dan cara mengecek</span></span>${I.chev}</button>` : ""}
       <section>${body}</section>
     </div>`;
     view.querySelectorAll("[data-cat]").forEach(b => b.addEventListener("click", () => { UI.mapCat = b.dataset.cat; renderMap(); }));
     view.querySelectorAll("[data-ex]").forEach(b => b.addEventListener("click", () => openExercise(exById(b.dataset.ex))));
+    view.querySelector("[data-guide]")?.addEventListener("click", () => muscleGuide());
     view.querySelectorAll("[data-p]").forEach(b => b.addEventListener("click", () => openPelvic(PELVIC.find(p => p.id === b.dataset.p))));
   }
 
@@ -346,9 +352,10 @@
       <div class="rxgrid"><div class="rxbox"><div class="eyebrow">Latihan</div><div class="v" style="font-size:19px">${p.rx}</div></div><div class="rxbox tgt"><div class="eyebrow">Target</div><div class="v" style="font-size:19px">${p.target}</div></div></div>
       <p class="muted" style="margin:0;font-size:13px">Durasi pemandu ±${Math.max(1, dur)} menit</p>
       <h3>Cara melakukan</h3><ol class="steps">${p.how.map(h => `<li>${h}</li>`).join("")}</ol>
-      <h3>Prinsip penting</h3><p style="margin:6px 0 0;font-size:14px">Waktu rileks sama atau lebih lama dari waktu kontraksi. Perut, bokong, dan paha tetap rileks. Jangan rutin berlatih sambil menghentikan pipis.</p>
+      <h3>Otot yang dikencangkan</h3><p style="margin:6px 0 0;font-size:14px">Kerutkan anus seperti menahan buang angin dan kencangkan area kelamin seperti menahan pipis, lalu angkat keduanya ke dalam dan ke atas. Perut, bokong, dan paha tetap rileks. Waktu rileks sama atau lebih lama dari waktu kontraksi.</p>
+      <button class="btn btn-line btn-block" data-guide style="margin-top:12px;min-height:44px">Lihat panduan otot lengkap</button>
       <div style="margin-top:20px">${open ? `<button class="btn btn-primary btn-block" data-go>${I.play} Mulai pemandu</button>` : `<button class="btn btn-ghost btn-block" disabled style="opacity:.6">Terbuka di level ${LV(p.lv).name}</button>`}</div>`,
-      (el) => { mountAnim(el.querySelector("#exanim"), p.id); el.querySelector("[data-go]")?.addEventListener("click", () => { closeSheet(); startPelvic([p], p.name); }); });
+      (el) => { mountAnim(el.querySelector("#exanim"), p.id); el.querySelector("[data-guide]").addEventListener("click", () => muscleGuide()); el.querySelector("[data-go]")?.addEventListener("click", () => { closeSheet(); startPelvic([p], p.name); }); });
   }
 
   /* =========================================================
@@ -406,6 +413,7 @@
       <div class="list">
         <button class="li" data-a="level"><span class="tx"><b>Level latihan</b><span>Ubah level secara manual</span></span><span class="val" style="color:${lvColor(S.level)}">${LV(S.level).name}</span>${I.chev}</button>
         <button class="li" data-a="retest"><span class="tx"><b>Tes ulang level</b><span>Disarankan setiap 4 minggu</span></span>${I.chev}</button>
+        <button class="li" data-a="kontrol"><span class="tx"><b>Program Kontrol</b><span>Program 12 minggu untuk kontrol ejakulasi</span></span>${I.chev}</button>
       </div>
       <div class="list">
         <button class="li" data-a="pname"><span class="tx"><b>Nama menu dasar panggul</b><span>Nama netral menjaga privasi saat HP dilihat orang</span></span><span class="val">${S.pelvicName}</span>${I.chev}</button>
@@ -419,6 +427,7 @@
     const on = (a, f) => view.querySelector(`[data-a="${a}"]`).addEventListener("click", f);
     on("level", () => levelPicker());
     on("retest", () => onboarding(true));
+    on("kontrol", () => { location.hash = "#kontrol"; });
     on("pname", () => { S.pelvicName = S.pelvicName === "Core Dalam" ? "Pelvic Floor" : "Core Dalam"; save(); renderProfile(); toast(`Nama menu: ${S.pelvicName}`); });
     on("theme", () => { S.theme = { system: "dark", dark: "light", light: "system" }[S.theme]; save(); applyTheme(); renderProfile(); });
     on("sound", () => { S.sound = !S.sound; save(); renderProfile(); });
@@ -652,7 +661,7 @@
       <div class="wo-body">
         <div><div class="eyebrow">Latihan ${s.ex + 1}/${G.list.length} · ${S.pelvicName}</div><h2>${p.name}</h2><p class="muted" style="margin:6px 0 0;font-size:14px">${G.daily ? "Versi harian · 1 set" : p.rx}</p></div>
         <div class="orb-wrap"><div class="orb ${s.kind}" id="orb"><div class="t" id="gleft">${Math.ceil(G.left)}</div><div class="l" id="glabel">${s.label}</div><div class="s" id="gsub">${s.sub || ""}</div></div></div>
-        <p class="hint">Napas tetap berjalan. Perut, bokong, dan paha rileks.</p>
+        <p class="hint" id="gcue">${cueFor(s.kind)}</p>
       </div>
       <div class="wo-foot">
         <button class="btn btn-primary btn-block" data-a="gpause">${G.paused ? I.play + " Lanjutkan" : I.pause + " Jeda"}</button>
@@ -673,6 +682,7 @@
     const prevEx = j > 0 ? G.steps[j - 1].ex : -1;
     if (s.ex !== prevEx) { renderG(); return; }
     const orb = $("#orb"); if (orb) orb.className = "orb " + s.kind;
+    const cue = $("#gcue"); if (cue) cue.innerHTML = cueFor(s.kind);
     $("#glabel").textContent = s.label; $("#gsub").textContent = s.sub || ""; $("#gleft").textContent = Math.ceil(G.left);
   }
   function gTick() {
@@ -692,6 +702,439 @@
   function exitG() { clearInterval(gtick); G = null; keepAwake(false); $("#wo")?.remove(); document.body.style.overflow = ""; rerender(); }
 
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && (W || G)) { wake = null; keepAwake(true); } });
+
+  /* =========================================================
+     PANDUAN OTOT DASAR PANGGUL
+     ========================================================= */
+  function cueFor(kind) {
+    if (kind === "contract" || kind === "hold") return "<b>Kerutkan anus + area kelamin</b>, angkat ke dalam dan ke atas. Perut, bokong, paha tetap rileks.";
+    if (kind === "breath") return "<b>Biarkan dasar panggul turun</b> dan melebar saat menarik napas. Jangan mengejan.";
+    if (kind === "relax") return "<b>Lepas penuh.</b> Rasakan otot turun kembali dan lunak.";
+    return "Napas tetap berjalan. Perut, bokong, dan paha rileks.";
+  }
+
+  function pelvicDiagram() {
+    return `<figure class="pfd" id="pfd">
+      <svg viewBox="0 0 300 172" role="img" aria-label="Diagram dasar panggul tampak samping: otot seperti ayunan dari tulang kemaluan ke tulang ekor, terangkat saat dikencangkan">
+        <text x="150" y="14" text-anchor="middle" class="pfd-cap" id="pfd-state">Kencangkan · naik dan masuk</text>
+        <ellipse cx="46" cy="74" rx="14" ry="22" class="pfd-bone"/>
+        <path d="M252 30 C268 46 270 70 254 88" class="pfd-bone-line"/>
+        <text x="46" y="112" text-anchor="middle" class="pfd-lbl">Tulang</text><text x="46" y="123" text-anchor="middle" class="pfd-lbl">kemaluan</text>
+        <text x="262" y="108" text-anchor="middle" class="pfd-lbl">Tulang</text><text x="262" y="119" text-anchor="middle" class="pfd-lbl">ekor</text>
+        <text x="16" y="164" class="pfd-lbl">DEPAN</text><text x="284" y="164" text-anchor="end" class="pfd-lbl">BELAKANG</text>
+        <path id="pfd-rest" d="M60 84 Q150 144 246 84" class="pfd-ghost"/>
+        <path id="pfd-m" d="M60 84 Q150 144 246 84" class="pfd-muscle"/>
+        <g id="pfd-o"></g>
+        <path id="pfd-arrow" d="M150 156 V128 M142 137 L150 127 L158 137" class="pfd-arrow"/>
+      </svg>
+      <figcaption>
+        <span><i class="pfd-k1"></i>Saluran kencing</span>
+        <span><i class="pfd-k2"></i>Vagina / pangkal penis</span>
+        <span><i class="pfd-k3"></i>Anus</span>
+      </figcaption>
+    </figure>`;
+  }
+  let pfdRaf = 0;
+  function animateDiagram(root) {
+    const fig = root.querySelector("#pfd"); if (!fig) return;
+    const m = fig.querySelector("#pfd-m"), og = fig.querySelector("#pfd-o"), ar = fig.querySelector("#pfd-arrow"), st = fig.querySelector("#pfd-state");
+    const ts = [0.22, 0.47, 0.76], cls = ["pfd-k1", "pfd-k2", "pfd-k3"];
+    og.innerHTML = ts.map((_, i) => `<rect width="7" height="13" rx="3.5" class="${cls[i]}"/>`).join("");
+    const rects = og.querySelectorAll("rect");
+    const draw = (k) => {
+      const cy = 144 - 50 * k;
+      m.setAttribute("d", `M60 84 Q150 ${cy} 246 84`);
+      ts.forEach((t, i) => { const x = (1 - t) * (1 - t) * 60 + 2 * (1 - t) * t * 150 + t * t * 246, y = (1 - t) * (1 - t) * 84 + 2 * (1 - t) * t * cy + t * t * 84; rects[i].setAttribute("x", (x - 3.5).toFixed(1)); rects[i].setAttribute("y", (y - 6.5 - 2 * k).toFixed(1)); rects[i].setAttribute("height", (13 - 5 * k).toFixed(1)); });
+      ar.style.opacity = k > 0.5 ? 1 : 0; ar.setAttribute("transform", `translate(0 ${(-16 * k).toFixed(1)})`);
+    };
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { draw(1); return; }
+    cancelAnimationFrame(pfdRaf); const t0 = performance.now();
+    const loop = (now) => {
+      if (!fig.isConnected) return;
+      const t = ((now - t0) / 1000) % 6; // 1 dtk naik, 2 dtk tahan, 1 dtk turun, 2 dtk rileks
+      let k = t < 1 ? t : t < 3 ? 1 : t < 4 ? 1 - (t - 3) : 0;
+      k = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      draw(k);
+      st.textContent = t < 3 ? "Kencangkan · naik dan masuk" : "Lepas · turun dan rileks";
+      pfdRaf = requestAnimationFrame(loop);
+    };
+    pfdRaf = requestAnimationFrame(loop);
+  }
+
+  function muscleGuide(onStart) {
+    sheet(`<div class="eyebrow" style="color:var(--pelvic)">${S.pelvicName} · panduan</div>
+      <h2>Otot yang dilatih</h2>
+      <p style="margin:8px 0 0;font-size:14px">Otot dasar panggul membentang seperti ayunan dari tulang kemaluan ke tulang ekor. Tiga lubang melewatinya. Kegel yang benar mengencangkan ketiganya sekaligus, lalu mengangkatnya ke dalam dan ke atas.</p>
+      ${pelvicDiagram()}
+
+      <h3>Tiga bagian yang dikencangkan</h3>
+      <div class="zones">
+        <div class="zone"><i class="pfd-k1"></i><div><b>Depan · saluran kencing</b><span>Seperti menahan pipis. Otot pubococcygeus (otot PC).</span></div></div>
+        <div class="zone"><i class="pfd-k2"></i><div><b>Tengah · area kelamin</b><span><b>Pria:</b> pangkal penis tertarik ke dalam, testis sedikit naik. <b>Wanita:</b> bukaan vagina mengencang dan terangkat. Otot bulbospongiosus dan ischiocavernosus, yang berperan saat ereksi dan orgasme.</span></div></div>
+        <div class="zone"><i class="pfd-k3"></i><div><b>Belakang · anus</b><span>Seperti menahan buang angin. Anus mengerut dan tertarik ke depan. Otot puborectalis.</span></div></div>
+      </div>
+
+      <h3>Langkah mengencangkan</h3>
+      <ol class="steps">
+        <li><b>Berbaring</b>, lutut ditekuk. Satu tangan di perut bawah, satu di bokong.</li>
+        <li><b>Kerutkan anus</b> seperti menahan buang angin.</li>
+        <li><b>Kencangkan bagian depan</b> seperti menahan pipis.</li>
+        <li><b>Angkat keduanya</b> ke dalam dan ke atas seperti lift naik, dengan kekuatan 50–70%.</li>
+        <li><b>Lepas penuh</b> sampai otot terasa turun dan lunak kembali.</li>
+        <li><b>Napas tetap jalan.</b> Hembuskan napas saat mengencangkan.</li>
+      </ol>
+
+      <h3>Cek sudah benar</h3>
+      <ul class="checks">
+        <li><b>Perineum</b> (area antara kelamin dan anus): dengan dua jari, terasa naik ke dalam. Kalau terdorong keluar, itu mengejan.</li>
+        <li><b>Pria:</b> di depan cermin, pangkal penis bergerak sedikit naik ke arah perut.</li>
+        <li><b>Wanita:</b> satu jari bersih di dalam vagina terasa dijepit dan ditarik ke atas.</li>
+      </ul>
+
+      <h3>Jangan ikut bekerja</h3>
+      <ul class="warnl">
+        <li>Perut mengeras atau mengempis kuat</li>
+        <li>Bokong mengencang atau pinggul terangkat</li>
+        <li>Kedua lutut saling merapat</li>
+        <li>Napas tertahan</li>
+        <li>Mendorong ke bawah seperti mengejan</li>
+      </ul>
+      <p class="note" style="margin-top:12px">Menahan pipis cukup 1–2 kali untuk mengenali otot, bukan untuk latihan rutin. Kalau setelah 2–3 minggu otot masih sulit dirasakan, atau terasa nyeri, temui fisioterapis panggul.</p>
+      <div style="margin-top:16px">${onStart ? `<button class="btn btn-primary btn-block" data-start>${I.play} Saya paham, mulai latihan</button>` : `<button class="btn btn-ghost btn-block" data-close>Tutup</button>`}</div>`,
+      (el) => { animateDiagram(el); el.querySelector("[data-start]")?.addEventListener("click", () => { closeSheet(); onStart(); }); });
+  }
+
+  /* =========================================================
+     PROGRAM KONTROL EJAKULASI · 12 minggu, berbasis riset
+     Sumber: pedoman EAU & ISSM, Pastore dkk. 2014 & 2018,
+     tinjauan Cochrane (terapi perilaku), tinjauan 54 studi (2023).
+     ========================================================= */
+  const WEEK_MS = 7 * 864e5;
+  function KS() { if (!S.kontrol) S.kontrol = { start: null, checks: [], weekly: [] }; return S.kontrol; }
+  function kWeek() { const k = KS(); return k.start ? Math.floor((Date.now() - k.start) / WEEK_MS) + 1 : 0; }
+  const KPHASES = [
+    { from: 1, to: 2, name: "Kenali", color: "var(--l1)", goal: "Menemukan otot dasar panggul yang tepat, belajar melepasnya, dan mengenali tingkat gairah.",
+      tasks: ["Latihan terpandu setiap hari, ±8 menit", "Baca panduan otot dan skala gairah", "Aerobik 30 menit, 3–5× per minggu"] },
+    { from: 3, to: 6, name: "Kekuatan", color: "var(--l2)", goal: "Membangun kekuatan dan daya tahan otot. Durasi tahan naik 1 detik setiap minggu, dari berbaring ke duduk lalu berdiri.",
+      tasks: ["Latihan terpandu setiap hari, ±10 menit", "Lakukan sebagian set sambil duduk dan berdiri", "Aerobik 30 menit, 5× per minggu"] },
+    { from: 7, to: 9, name: "Kontrol", color: "var(--l3)", goal: "Melatih kontrol halus (elevator dan kunci cepat) dan relaksasi, lalu mulai latihan stop-start sendiri 3× per minggu.",
+      tasks: ["Latihan terpandu setiap hari, ±12 menit", "Stop-start sendiri, 3× per minggu", "Latihan napas saat bergairah"] },
+    { from: 10, to: 12, name: "Integrasi", color: "var(--pelvic)", goal: "Menerapkan semua keterampilan bersama pasangan: stop-start, squeeze, napas, dan relaksasi panggul.",
+      tasks: ["Latihan terpandu setiap hari, ±12 menit", "Stop-start atau squeeze bersama pasangan", "Isi jurnal mingguan untuk menilai kemajuan"] }
+  ];
+  const kPhase = (w) => KPHASES.find(p => w >= p.from && w <= p.to) || KPHASES[3];
+  function kSession(w) {
+    const it = (name, rx, fn) => ({ name, rx, steps: fn });
+    if (w <= 2) return [
+      it("Napas diafragma", "2 menit", () => P.breath(2)),
+      it("Kegel dasar (berbaring)", "2×10 · tahan 3 dtk", () => P.hold(2, 10, 3, 3)),
+      it("Quick flick", "1×10", () => P.flick(1, 10)),
+      it("Reverse Kegel", "1×8 · 5 dtk", () => P.reverse(1, 8, 5))];
+    if (w <= 6) { const h = Math.min(8, w + 2); return [
+      it("Kegel tahan (duduk / berdiri)", `2×10 · tahan ${h} dtk`, () => P.hold(2, 10, h, h)),
+      it("Quick flick", "2×15", () => P.flick(2, 15)),
+      it("Reverse Kegel", "1×10 · 6 dtk", () => P.reverse(1, 10, 6))]; }
+    if (w <= 9) return [
+      it("Kegel tahan (berdiri)", "1×10 · tahan 10 dtk", () => P.hold(1, 10, 10, 10)),
+      it("Elevator Kegel", "1×5 · 3 tingkat", () => P.elevator(1, 5, 3)),
+      it("Kunci cepat", "2×8 · kontraksi kuat", () => P.move(2, 8, ["Kunci kuat", "Lepas & napas"])),
+      it("Reverse Kegel", "1×10 · 8 dtk", () => P.reverse(1, 10, 8))];
+    return [
+      it("Kegel tahan (berbagai posisi)", "1×10 · tahan 10 dtk", () => P.hold(1, 10, 10, 10)),
+      it("Elevator Kegel", "1×5 · 5 tingkat", () => P.elevator(1, 5, 5)),
+      it("Reverse Kegel", "1×10 · 10 dtk", () => P.reverse(1, 10, 10)),
+      it("Napas diafragma", "2 menit", () => P.breath(2))];
+  }
+  const kMinutes = (list) => Math.round(list.reduce((t, p) => t + p.steps().reduce((a, s) => a + s.sec, 0) + 5, 0) / 60);
+  function kDaysThisWeek() {
+    const k = KS(); if (!k.start) return 0; const w = kWeek(); const ws = k.start + (w - 1) * WEEK_MS;
+    return new Set(S.logs.filter(l => l.type === "pelvic" && l.ts >= ws && (l.title || "").startsWith("Program Kontrol")).map(l => l.date)).size;
+  }
+  function kTodayDone() { return S.logs.some(l => l.type === "pelvic" && l.date === todayKey() && (l.title || "").startsWith("Program Kontrol")); }
+
+  /* Cek mandiri (bukan alat diagnosis; ambang skor mengikuti pola PEDT) */
+  const KQ = [
+    { q: "Biasanya, berapa lama dari penetrasi sampai ejakulasi?", o: ["Lebih dari 5 menit", "3–5 menit", "2–3 menit", "1–2 menit", "Kurang dari 1 menit"] },
+    { q: "Seberapa sulit menunda ejakulasi saat kamu ingin menundanya?", o: ["Tidak sulit", "Sedikit sulit", "Cukup sulit", "Sangat sulit", "Hampir mustahil"] },
+    { q: "Seberapa sering ejakulasi terjadi sebelum kamu menginginkannya?", o: ["Hampir tidak pernah", "Jarang", "Kadang-kadang", "Sering", "Hampir selalu"] },
+    { q: "Seberapa besar hal ini membuatmu tertekan atau frustrasi?", o: ["Tidak sama sekali", "Sedikit", "Sedang", "Cukup besar", "Sangat besar"] },
+    { q: "Seberapa besar pengaruhnya pada hubungan dengan pasangan?", o: ["Tidak ada", "Sedikit", "Sedang", "Cukup besar", "Sangat besar"] }
+  ];
+  const KONSET = ["Sejak pengalaman seksual pertama", "Muncul belakangan, sebelumnya normal", "Tidak tentu, hanya pada situasi tertentu"];
+  function kInterpret(c) {
+    const score = c.ans.reduce((a, b) => a + b, 0);
+    const band = score >= 11 ? { t: "Sesuai pola ejakulasi dini", c: "var(--l4)" } : score >= 9 ? { t: "Ada tanda kontrol berkurang", c: "var(--l3)" } : { t: "Kontrol dalam batas umum", c: "var(--l1)" };
+    let type;
+    if (c.onset === 0) type = c.ans[0] >= 3 ? "Polanya mirip <b>ejakulasi dini seumur hidup</b> (lifelong): sejak awal, umumnya sekitar 1 menit atau kurang. Faktor bawaan seperti jalur serotonin di otak berperan." : "Muncul sejak awal, tetapi waktunya tidak sesingkat kriteria seumur hidup (±1 menit).";
+    else if (c.onset === 1) type = "Polanya mirip <b>ejakulasi dini didapat</b> (acquired): sebelumnya normal lalu memendek, sering menjadi 3 menit atau kurang. Pola ini sering punya penyebab yang bisa diobati.";
+    else type = "Polanya <b>bervariasi atau situasional</b>. Ini umum dan sering terkait kecemasan, kelelahan, jarang berhubungan, atau pasangan baru.";
+    const recs = ["Ikuti Program Kontrol 12 minggu. Latihan dasar panggul adalah terapi non-obat dengan data paling menjanjikan."];
+    if (c.onset === 1) recs.push("Periksakan penyebab yang bisa diobati: sulit ereksi, peradangan prostat, atau tiroid yang terlalu aktif.");
+    if (score >= 11 || c.onset === 1) recs.push("Konsultasikan ke dokter spesialis andrologi (Sp.And) atau urologi (Sp.U). Terapi obat terbukti efektif dan dapat digabung dengan program ini.");
+    if (c.ans[3] >= 3 || c.ans[4] >= 3) recs.push("Tekanan emosional yang besar layak dibicarakan dengan pasangan, dan bila perlu dengan psikolog atau terapis seks.");
+    return { score, band, type, recs };
+  }
+
+  /* Skala gairah (dipakai di beberapa panduan) */
+  const arousalScale = () => `<div class="ascale" role="img" aria-label="Skala gairah 1 sampai 10">
+      ${[...Array(10)].map((_, i) => `<i class="${i < 4 ? "z1" : i < 7 ? "z2" : i < 9 ? "z3" : "z4"}"><b>${i + 1}</b></i>`).join("")}
+    </div>
+    <div class="ascale-k"><span><i class="z1"></i>1–4 tenang</span><span><i class="z2"></i>5–7 zona latihan</span><span><i class="z3"></i>8–9 berhenti</span><span><i class="z4"></i>10 tidak bisa kembali</span></div>`;
+
+  const KTECH = {
+    skala: { name: "Skala gairah 1–10", sub: "Dasar semua teknik: kenali kapan harus berhenti", body: () => `
+      <p style="margin:8px 0 0">Banyak pria baru sadar saat sudah terlambat. Langkah pertama adalah belajar membaca tingkat gairah sendiri dengan angka.</p>
+      ${arousalScale()}
+      <ol class="steps">
+        <li><b>1–4 tenang:</b> rangsangan ringan, mudah dikendalikan.</li>
+        <li><b>5–7 zona latihan:</b> rangsangan jelas tetapi masih terkendali. Usahakan tetap di sini.</li>
+        <li><b>8–9 mendekati batas:</b> tanda awal muncul, misalnya napas memburu, otot panggul dan paha menegang. Berhenti di sini.</li>
+        <li><b>10 titik tidak bisa kembali:</b> ejakulasi sudah tidak bisa ditahan.</li>
+      </ol>
+      <h3>Cara melatih</h3>
+      <p style="margin:6px 0 0;font-size:14px">Saat latihan sendiri, berhenti sejenak setiap beberapa menit dan sebutkan angkanya dalam hati. Tujuannya mengenali tanda tubuh di tingkat 7–8, sebelum mencapai 10.</p>` },
+    stopstart: { name: "Teknik stop-start", sub: "Semans · minggu 7–12", body: () => `
+      <p style="margin:8px 0 0">Melatih otak dan tubuh untuk bertahan lebih lama di zona gairah tinggi tanpa melewati batas.</p>
+      ${arousalScale()}
+      <ol class="steps">
+        <li><b>Mulai sendiri</b> (minggu 7–9), di tempat yang tenang dan tanpa terburu-buru.</li>
+        <li><b>Rangsang sampai tingkat 7–8</b> pada skala gairah.</li>
+        <li><b>Berhenti total</b> 30–60 detik. Napas perut perlahan dan lepaskan ketegangan panggul, perut, dan paha sampai gairah turun ke 4–5.</li>
+        <li><b>Ulangi 3–4 siklus</b>, baru biarkan ejakulasi di siklus terakhir.</li>
+        <li><b>3× per minggu.</b> Setelah lancar, lakukan bersama pasangan (minggu 10–12) dengan sinyal berhenti yang sudah disepakati.</li>
+      </ol>
+      <p class="note" style="margin-top:12px">Bukti: tinjauan Cochrane menemukan terapi perilaku membantu durasi dan kepuasan pasangan, tetapi buktinya lemah. Hasil terbaik didapat bila digabung dengan latihan dasar panggul atau terapi dokter.</p>` },
+    squeeze: { name: "Teknik squeeze", sub: "Masters & Johnson · minggu 10–12", body: () => `
+      <p style="margin:8px 0 0">Menekan refleks ejakulasi secara fisik saat sudah mendekati batas. Bisa dilakukan sendiri atau oleh pasangan.</p>
+      <ol class="steps">
+        <li><b>Saat mendekati tingkat 8</b>, hentikan rangsangan.</li>
+        <li><b>Tekan bagian bawah kepala penis</b>, di batas kepala dan batang, dengan ibu jari di bawah serta telunjuk dan jari tengah di atas.</li>
+        <li><b>Tahan sekitar 10–20 detik</b> sampai dorongan ejakulasi mereda. Ereksi boleh sedikit berkurang.</li>
+        <li><b>Tunggu ±30 detik</b>, lalu lanjutkan.</li>
+        <li><b>Ulangi 3–4 kali</b> per sesi.</li>
+      </ol>
+      <p class="note" style="margin-top:12px">Tekanan harus kuat tetapi tidak menyakitkan. Hentikan bila terasa nyeri.</p>` },
+    napas: { name: "Napas & relaksasi panggul", sub: "Kunci yang sering dilupakan", body: () => `
+      <p style="margin:8px 0 0">Napas pendek dan otot yang tegang (perut, bokong, paha, dasar panggul) mempercepat refleks ejakulasi. Rileks justru memperpanjang waktu.</p>
+      <ol class="steps">
+        <li><b>Napas perut lambat:</b> tarik 4 detik lewat hidung, hembuskan 6 detik.</li>
+        <li><b>Lepaskan dasar panggul</b> seperti latihan Reverse Kegel, terutama saat gairah naik ke 7–8.</li>
+        <li><b>Kendurkan perut, bokong, dan paha.</b> Periksa ketegangan ini setiap kali gairah naik.</li>
+        <li><b>Kunci cepat bila perlu:</b> sebagian pria terbantu oleh satu kontraksi Kegel kuat 3–5 detik saat mendekati tingkat 8, lalu lepas. Coba mana yang cocok untukmu.</li>
+        <li><b>Ubah ritme atau posisi</b> sebelum mencapai tingkat 8, jangan menunggu sampai terlambat.</li>
+      </ol>` }
+  };
+
+  const KEVID = [
+    { name: "Latihan otot dasar panggul", lvl: "Rendah–sedang", c: "var(--l2)",
+      text: "Pastore dkk. (2014): 40 pria dengan ejakulasi dini seumur hidup menjalani 12 minggu latihan. 82,5% membaik, dan waktu rata-rata naik dari 31,7 menjadi 146,2 detik. Studi lanjutan (2018): 91% dari 122 pria mendapat kontrol dalam 12 minggu, dan 56% masih terkontrol setelah 36 bulan.",
+      lim: "Tanpa kelompok pembanding. Program klinisnya juga memakai stimulasi listrik dan biofeedback, yang tidak ada di aplikasi ini.",
+      links: [["Ringkasan EAU (2014)", "https://uroweb.org/news/lifelong-premature-ejaculation-can-be-treated-by-pelvic-floor-exercises"], ["Asian J Andrology (2018)", "https://doaj.org/article/5eafefc8ecd244c083101636872acb73"]] },
+    { name: "Aktivitas fisik aerobik", lvl: "Rendah", c: "var(--l3)",
+      text: "Tinjauan 54 studi dengan 3.485 peserta (2023): pada satu studi, lari 30 menit 5× per minggu memberi efek pada waktu ejakulasi yang mirip dengan obat dapoxetine.",
+      lim: "Sebagian besar studi kecil. Peneliti menyatakan perlu studi yang lebih besar.",
+      links: [["Anglia Ruskin University", "https://aru.ac.uk/news/exercise-could-help-with-common-sexual-complaint"], ["Uji klinis NCT02844998", "https://clinicaltrials.gov/study/NCT02844998"]] },
+    { name: "Teknik perilaku (stop-start, squeeze)", lvl: "Rendah", c: "var(--l3)",
+      text: "Tinjauan Cochrane (4 uji, 253 pasien): terapi perilaku memperbaiki durasi hubungan dan kepuasan pasangan dibanding tanpa terapi, dan menambah efek obat bila digabung.",
+      lim: "Bukti dinilai lemah dan tidak konsisten. Lebih efektif bila dikombinasikan dengan terapi lain.",
+      links: [["Cochrane Review", "https://www.cochrane.org/evidence/CD008195_psychosocial-interventions-premature-ejaculation"]] },
+    { name: "Obat dengan resep dokter", lvl: "Tinggi", c: "var(--l1)",
+      text: "Dapoxetine, obat golongan SSRI yang dibuat khusus untuk ejakulasi dini, menambah waktu sekitar 2,5–3 menit. Pilihan lain adalah SSRI harian atau semprotan anestesi lokal. Semuanya memerlukan pemeriksaan dan resep dokter.",
+      lim: "Aplikasi ini tidak memberi dosis atau rekomendasi obat. Bicarakan dengan dokter.",
+      links: [["Tinjauan klinis RACGP", "https://www.racgp.org.au/afp/2015/october/premature-ejaculation-a-clinical-review-for-the-general-physician/"], ["Pedoman EAU 2021", "https://pubmed.ncbi.nlm.nih.gov/34183196/"]] }
+  ];
+
+  function renderKontrol() {
+    const k = KS(), w = kWeek(), started = !!k.start, done = w > 12;
+    const ph = started ? kPhase(Math.min(w, 12)) : null;
+    const lastCheck = k.checks[k.checks.length - 1];
+    const firstCheck = k.checks[0];
+
+    const timeline = `<div class="ktl" aria-label="Linimasa 12 minggu">
+        ${[...Array(12)].map((_, i) => { const n = i + 1, p = kPhase(n); return `<i style="--c:${p.color}" class="${started && n < w ? "past" : started && n === w ? "now" : ""}" title="Minggu ${n}"></i>`; }).join("")}
+        ${KPHASES.map(p => `<span style="grid-column:${p.from} / ${p.to + 1};color:${p.color}">${p.name}</span>`).join("")}
+      </div>`;
+
+    let hero;
+    if (!started) {
+      hero = `<section class="hero kh">
+        <div class="eyebrow" style="color:var(--pelvic)">Program 12 minggu · berbasis riset</div>
+        <h1 style="font-size:40px">Program Kontrol</h1>
+        <p style="margin:8px 0 0;color:var(--muted);max-width:44ch">Latihan dasar panggul, olahraga aerobik, dan teknik perilaku untuk memperpanjang waktu dan meningkatkan kontrol ejakulasi. Disusun dari pedoman urologi dan studi klinis.</p>
+        ${timeline}
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+          ${lastCheck ? "" : `<button class="btn btn-ghost btn-block" data-k="check">Cek mandiri dulu · 2 menit</button>`}
+          <button class="btn btn-primary btn-block" data-k="startprog">${I.play} Mulai program</button>
+        </div>
+      </section>`;
+    } else {
+      const sess = kSession(Math.min(w, 12)); const days = kDaysThisWeek(); const today = kTodayDone();
+      hero = `<section class="hero kh">
+        <div class="eyebrow" style="color:${ph.color}">${done ? "Program selesai · pemeliharaan" : `Minggu ${w} dari 12 · fase ${ph.name}`}</div>
+        <h1 style="font-size:40px">${done ? "Pemeliharaan" : ph.name}</h1>
+        <p style="margin:8px 0 0;color:var(--muted);font-size:14px">${done ? "Pertahankan hasil dengan latihan fase Integrasi 3–4× per minggu. Studi menunjukkan sebagian pria kehilangan kontrol bila berhenti total." : ph.goal}</p>
+        ${timeline}
+        <div class="kweek"><span><b class="num">${days}</b>/7 hari latihan minggu ini</span><span>${today ? '<span class="pill ok">Hari ini selesai</span>' : '<span class="pill cur">Belum latihan hari ini</span>'}</span></div>
+        <ul class="exlist" style="margin-top:6px">${sess.map((p, i) => `<li><span class="ix">${String(i + 1).padStart(2, "0")}</span><span class="nm">${p.name}</span><span class="rx" style="font-size:15px">${p.rx}</span></li>`).join("")}</ul>
+        <button class="btn btn-primary btn-block" data-k="session" style="margin-top:14px">${I.play} ${today ? "Latihan lagi" : "Mulai latihan hari ini"} · ±${kMinutes(sess)} menit</button>
+        ${done ? "" : `<h3 class="kh3">Tugas minggu ini</h3><ul class="checks" style="margin-top:4px">${ph.tasks.map(t => `<li>${t}</li>`).join("")}</ul>`}
+      </section>`;
+    }
+
+    const checkCard = lastCheck ? (() => { const r = kInterpret(lastCheck); const d = new Date(lastCheck.ts);
+      const delta = firstCheck && firstCheck !== lastCheck ? r.score - kInterpret(firstCheck).score : null;
+      return `<button class="card kcheck" data-k="result">
+        <div class="kscore num" style="color:${r.band.c}">${r.score}<small>/20</small></div>
+        <div class="tx"><b>${r.band.t}</b><span>Cek ${d.getDate()} ${MONTHS[d.getMonth()]}${delta !== null ? ` · ${delta <= 0 ? "turun" : "naik"} ${Math.abs(delta)} poin dari cek pertama` : ""}</span></div>${I.chev}</button>`; })()
+      : `<button class="card kcheck" data-k="check"><div class="kscore num" style="color:var(--muted)">?</div><div class="tx"><b>Belum ada cek mandiri</b><span>6 pertanyaan untuk memetakan pola dan langkah yang tepat</span></div>${I.chev}</button>`;
+
+    const wk = k.weekly;
+    view.innerHTML = `<div class="view">
+      ${hero}
+
+      <section>
+        <div class="section-h" style="margin-bottom:10px"><h2>Cek mandiri</h2>${lastCheck ? `<button class="link" data-k="check">Ulangi cek</button>` : ""}</div>
+        ${checkCard}
+        <p class="note" style="margin:8px 0 0">Skor lebih rendah berarti kontrol lebih baik. Ulangi setiap 4 minggu untuk melihat kemajuan.</p>
+      </section>
+
+      <section class="card">
+        <div class="section-h" style="margin-bottom:6px"><b>Jurnal mingguan</b><button class="link" data-k="weekly">Isi minggu ini</button></div>
+        ${wk.length ? kChart(wk) : `<div class="empty" style="padding:14px 6px">Isi jurnal setiap akhir minggu: rasa kontrol, perkiraan waktu, dan kepuasan. Grafiknya muncul di sini.</div>`}
+      </section>
+
+      <section>
+        <div class="section-h" style="margin-bottom:10px"><h2>Teknik</h2><span class="eyebrow">Panduan klinis</span></div>
+        <div class="list">${Object.entries(KTECH).map(([id, t]) => `<button class="li" data-tech="${id}"><span class="tx"><b>${t.name}</b><span>${t.sub}</span></span>${I.chev}</button>`).join("")}
+          <button class="li" data-k="otot"><span class="tx"><b>Panduan otot dasar panggul</b><span>Letak otot, cara mengencangkan, cara mengecek</span></span>${I.chev}</button></div>
+      </section>
+
+      <section class="card">
+        <div class="eyebrow">Definisi medis · ISSM</div>
+        <p style="margin:6px 0 0;font-size:14px">Ejakulasi dini adalah ejakulasi yang <b>hampir selalu terjadi dalam ±1 menit</b> sejak pengalaman pertama (seumur hidup), atau <b>memendek menjadi ±3 menit atau kurang</b> setelah sebelumnya normal (didapat). Kondisi ini disertai ketidakmampuan menunda dan berdampak negatif, misalnya stres, frustrasi, atau menghindari keintiman. Keluhan ini dilaporkan oleh sekitar 21–31% pria dewasa.</p>
+      </section>
+
+      <section>
+        <div class="section-h" style="margin-bottom:10px"><h2>Gaya hidup</h2></div>
+        <ul class="checks klist">
+          <li><b>Aerobik 30 menit, 5× per minggu.</b> Lari, jalan cepat, atau bersepeda. Satu studi menemukan efeknya mirip obat.</li>
+          <li><b>Latihan dasar panggul setiap hari.</b> Konsistensi lebih penting daripada intensitas.</li>
+          <li><b>Kelola kecemasan.</b> Kecemasan memperparah keluhan, dan keluhan memperparah kecemasan. Bicarakan dengan pasangan.</li>
+          <li><b>Perhatikan ereksi.</b> Sulit ereksi sering muncul bersamaan, dan pria cenderung terburu-buru sebelum ereksi hilang.</li>
+          <li><b>Kondom yang lebih tebal</b> dapat sedikit mengurangi rangsangan.</li>
+        </ul>
+      </section>
+
+      <section class="card kred">
+        <div class="section-h" style="margin-bottom:8px"><b>Kapan harus ke dokter</b><span class="pill" style="color:var(--l4)">Penting</span></div>
+        <ul class="warnl">
+          <li>Keluhan baru muncul setelah sebelumnya normal</li>
+          <li>Disertai sulit mendapatkan atau mempertahankan ereksi</li>
+          <li>Nyeri saat ejakulasi atau buang air kecil, atau ada darah di sperma</li>
+          <li>Jantung berdebar, gemetar, atau berat badan turun tanpa sebab (tanda tiroid)</li>
+          <li>Sangat mengganggu hidup atau hubungan, atau tidak membaik setelah 12 minggu</li>
+        </ul>
+        <p class="note" style="margin:10px 0 0">Temui dokter spesialis <b>andrologi (Sp.And)</b> atau <b>urologi (Sp.U)</b>. Ada obat yang terbukti efektif, dan semuanya memerlukan resep. Jangan membeli obat tanpa pemeriksaan.</p>
+      </section>
+
+      <section>
+        <div class="section-h" style="margin-bottom:10px"><h2>Dasar ilmiah</h2><span class="eyebrow">Kekuatan bukti</span></div>
+        <div class="evs">${KEVID.map(e => `<article class="ev">
+          <div class="ev-h"><b>${e.name}</b><span class="pill" style="color:${e.c}">${e.lvl}</span></div>
+          <p>${e.text}</p><p class="muted" style="font-size:12px">Keterbatasan: ${e.lim}</p>
+          <div class="ev-l">${e.links.map(([t, u]) => `<a href="${u}" target="_blank" rel="noopener">${t} ↗</a>`).join("")}</div></article>`).join("")}</div>
+      </section>
+
+      <div class="list">${started ? `<button class="li danger" data-k="reset"><span class="tx"><b>Ulang program dari minggu 1</b><span>Riwayat cek dan jurnal tetap tersimpan</span></span>${I.chev}</button>` : ""}</div>
+      <p class="note">Program ini disusun dari pedoman dan studi yang dipublikasikan, dan bukan pengganti pemeriksaan dokter. Semua jawaban tersimpan hanya di HP ini.</p>
+    </div>`;
+
+    const on = (sel, f) => view.querySelectorAll(sel).forEach(b => b.addEventListener("click", f));
+    on('[data-k="check"]', kCheckSheet);
+    on('[data-k="result"]', () => kResultSheet(lastCheck));
+    on('[data-k="startprog"]', () => { KS().start = new Date(new Date().setHours(0, 0, 0, 0)).getTime(); save(); toast("Program Kontrol dimulai · minggu 1"); renderKontrol(); });
+    on('[data-k="session"]', () => { const ww = Math.min(kWeek(), 12); const go = () => startPelvic(kSession(ww), `Program Kontrol · Minggu ${kWeek()}`, true); if (!S.logs.some(l => l.type === "pelvic")) muscleGuide(go); else go(); });
+    on('[data-k="weekly"]', kWeeklySheet);
+    on('[data-k="otot"]', () => muscleGuide());
+    on('[data-k="reset"]', () => sheet(`<h2>Ulang program?</h2><p class="muted">Program kembali ke minggu 1 mulai hari ini. Riwayat cek mandiri dan jurnal tetap tersimpan.</p><div class="row" style="margin-top:16px"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" data-yes>Ulang</button></div>`,
+      (el) => el.querySelector("[data-yes]").addEventListener("click", () => { KS().start = new Date(new Date().setHours(0, 0, 0, 0)).getTime(); save(); closeSheet(); renderKontrol(); })));
+    view.querySelectorAll("[data-tech]").forEach(b => b.addEventListener("click", () => { const t = KTECH[b.dataset.tech]; sheet(`<div class="eyebrow" style="color:var(--pelvic)">Program Kontrol · teknik</div><h2>${t.name}</h2>${t.body()}<button class="btn btn-ghost btn-block" data-close style="margin-top:16px">Tutup</button>`); }));
+  }
+
+  function kChart(wk) {
+    const byW = {}; wk.forEach(e => { byW[e.week] = e; });
+    const W = 320, H = 132, pl = 20, pb = 22, pt = 12, cw = (W - pl) / 12, bw = cw * 0.56, y = (v) => pt + (H - pt - pb) * (1 - v / 4);
+    const ff = "font-family:var(--f-display)";
+    let g = "";
+    for (let v = 0; v <= 4; v++) g += `<line x1="${pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--line);stroke-width:1"/><text x="${pl - 6}" y="${y(v) + 3.5}" text-anchor="end" style="font-size:10px;fill:var(--muted);${ff}">${v}</text>`;
+    for (let i = 1; i <= 12; i++) {
+      const x = pl + (i - 1) * cw + (cw - bw) / 2, e = byW[i], p = kPhase(i);
+      if (e) { const v = Math.max(e.control, 0.08); g += `<rect x="${x}" y="${y(v)}" width="${bw}" height="${y(0) - y(v)}" rx="3" style="fill:${p.color}"/><text x="${x + bw / 2}" y="${y(v) - 4}" text-anchor="middle" style="font-size:10px;font-weight:700;fill:var(--fg);${ff}">${e.control}</text>`; }
+      g += `<text x="${x + bw / 2}" y="${H - 6}" text-anchor="middle" style="font-size:10px;fill:var(--muted);${ff}">${i}</text>`;
+    }
+    const last = wk[wk.length - 1];
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Skor kontrol per minggu">${g}</svg>
+      <p class="note" style="margin:4px 0 0">Skor rasa kontrol per minggu program (0 = sangat buruk, 4 = sangat baik). Terakhir, minggu ${last.week}: perkiraan waktu <b>${KQ[0].o[last.time]}</b>, kepuasan ${last.sat}/4.</p>`;
+  }
+
+  function optGroup(name, opts, sel) {
+    return `<div class="opts" role="radiogroup" data-g="${name}">${opts.map((o, i) => `<button type="button" role="radio" aria-checked="${sel === i}" data-v="${i}">${o}</button>`).join("")}</div>`;
+  }
+  function bindOpts(el, state, onChange) {
+    el.querySelectorAll(".opts").forEach(g => g.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      g.querySelectorAll("button").forEach(x => x.setAttribute("aria-checked", x === b));
+      state[g.dataset.g] = +b.dataset.v; onChange && onChange();
+    })));
+  }
+
+  function kCheckSheet() {
+    const st = {};
+    sheet(`<div class="eyebrow" style="color:var(--pelvic)">Cek mandiri · 6 pertanyaan</div><h2>Pola ejakulasi</h2>
+      <p class="muted" style="margin:6px 0 0;font-size:14px">Jawab berdasarkan sebagian besar pengalaman dalam 3–6 bulan terakhir. Jawaban tersimpan hanya di HP ini.</p>
+      ${KQ.map((q, i) => `<div class="kq"><b><span class="num">${i + 1}</span>${q.q}</b>${optGroup("q" + i, q.o)}</div>`).join("")}
+      <div class="kq"><b><span class="num">6</span>Sejak kapan keluhan ini ada?</b>${optGroup("onset", KONSET)}</div>
+      <button class="btn btn-primary btn-block" data-submit disabled style="margin-top:18px;opacity:.5">Lihat hasil</button>
+      <p class="note" style="margin-top:10px">Ambang skor mengikuti pola kuesioner klinis PEDT, tetapi cek ini tidak tervalidasi dan bukan diagnosis.</p>`,
+      (el) => {
+        const btn = el.querySelector("[data-submit]");
+        bindOpts(el, st, () => { const ok = KQ.every((_, i) => st["q" + i] != null) && st.onset != null; btn.disabled = !ok; btn.style.opacity = ok ? 1 : .5; });
+        btn.addEventListener("click", () => {
+          const c = { ts: Date.now(), ans: KQ.map((_, i) => st["q" + i]), onset: st.onset };
+          KS().checks.push(c); save(); closeSheet(); renderKontrol(); kResultSheet(c);
+        });
+      });
+  }
+
+  function kResultSheet(c) {
+    const r = kInterpret(c);
+    sheet(`<div class="eyebrow">Hasil cek mandiri</div>
+      <div class="kres"><div class="kscore num" style="color:${r.band.c}">${r.score}<small>/20</small></div><div><b style="color:${r.band.c}">${r.band.t}</b><span class="muted" style="display:block;font-size:12px">0–8 batas umum · 9–10 tanda berkurang · 11+ sesuai pola</span></div></div>
+      <p style="margin:12px 0 0;font-size:14px">${r.type}</p>
+      <h3>Langkah yang disarankan</h3>
+      <ol class="steps">${r.recs.map(x => `<li>${x}</li>`).join("")}</ol>
+      <p class="note" style="margin-top:12px">Hasil ini membantu memetakan pola, bukan diagnosis. Diagnosis ditegakkan dokter melalui wawancara dan pemeriksaan.</p>
+      <button class="btn btn-ghost btn-block" data-close style="margin-top:14px">Tutup</button>`);
+  }
+
+  function kWeeklySheet() {
+    const k = KS(); const w = Math.max(1, Math.min(kWeek() || 1, 12));
+    const prev = k.weekly.find(e => e.week === w) || {};
+    const st = { control: prev.control, time: prev.time, sat: prev.sat };
+    sheet(`<div class="eyebrow" style="color:var(--pelvic)">Jurnal · minggu ${w}</div><h2>Bagaimana minggu ini?</h2>
+      <div class="kq"><b>Rasa kontrol saat berhubungan atau latihan</b>${optGroup("control", ["Sangat buruk", "Buruk", "Cukup", "Baik", "Sangat baik"], st.control)}</div>
+      <div class="kq"><b>Perkiraan waktu sampai ejakulasi</b>${optGroup("time", KQ[0].o, st.time)}</div>
+      <div class="kq"><b>Kepuasan (kamu dan pasangan)</b>${optGroup("sat", ["Sangat rendah", "Rendah", "Cukup", "Baik", "Sangat baik"], st.sat)}</div>
+      <button class="btn btn-primary btn-block" data-save style="margin-top:18px">Simpan jurnal</button>`,
+      (el) => {
+        bindOpts(el, st);
+        el.querySelector("[data-save]").addEventListener("click", () => {
+          if (st.control == null || st.time == null || st.sat == null) { toast("Isi ketiga pertanyaan dulu"); return; }
+          k.weekly = k.weekly.filter(e => e.week !== w).concat([{ week: w, ts: Date.now(), control: st.control, time: st.time, sat: st.sat }]).sort((a, b) => a.week - b.week);
+          save(); closeSheet(); renderKontrol(); toast(`Jurnal minggu ${w} tersimpan`);
+        });
+      });
+  }
 
   /* =========================================================
      ONBOARDING / TES LEVEL
